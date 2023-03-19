@@ -17,13 +17,15 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_of_birth = models.DateField(null = True, blank=True)
     age = models.IntegerField(null = True,blank=True)
     gender = models.CharField(max_length= 255,null=True, blank = True)
+    city = models.CharField(max_length=255,null = True,blank=True)
+    state = models.CharField(max_length=255, null = True, blank=True)
+    reports_count = models.IntegerField(null=True, blank=True)
+    accounts_count = models.IntegerField(null=True, blank=True)
 
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=True)
-    date_joined = models.DateTimeField(default=timezone.now)
-    city = models.CharField(max_length=255,null = True,blank=True)
-    state = models.CharField(max_length=255, null = True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
     REQUIRED_FIELDS = ['aadhar_no','email']
     USERNAME_FIELD = 'phone'
