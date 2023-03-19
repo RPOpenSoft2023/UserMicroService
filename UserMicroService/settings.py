@@ -128,3 +128,9 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+JWT_SECRET = "RPShiftBank"
+
+JWT_ALGORITHM= 'HS256'
+
+JWT_EXPIRY_TIME = 300
