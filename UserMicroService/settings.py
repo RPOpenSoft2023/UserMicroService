@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     # Our Apps
-    'UsersAPI',
+    'UserAPI',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Installed Apps
-    'djangorestframework'
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -127,3 +127,10 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+JWT_SECRET = "RPSHiftBank"
+
+JWT_ALGORITHM = "HS256"
+
+JWT_EXPIRY_TIME = 300
