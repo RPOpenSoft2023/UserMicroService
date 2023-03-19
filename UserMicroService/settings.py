@@ -31,8 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    # Our Apps
-    'UserAPI',
+    
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -40,6 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # Our Apps
+    'UserAPI',
 
     # Installed Apps
     
@@ -104,7 +106,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-AUTH_USER_MODEL = 'UserAPI.UserAPI'
+AUTH_USER_MODEL = 'UserAPI.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
