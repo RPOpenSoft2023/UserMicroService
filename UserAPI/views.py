@@ -4,7 +4,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.conf import settings
 from django.contrib.auth import authenticate
-from rest_framework import viewsets
 from rest_framework import status
 from . import models, serializers
 
