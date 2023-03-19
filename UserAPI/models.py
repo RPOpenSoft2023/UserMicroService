@@ -7,7 +7,7 @@ from django.core.validators import RegexValidator
 
 # Create your models here.
 
-class User(AbstractBaseUser, PermissionsMixin):
+class UserAPI(AbstractBaseUser, PermissionsMixin):
 
     first_name = models.CharField(max_length = 255)
     last_name = models.CharField(max_length = 255)
@@ -17,7 +17,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     date_of_birth = models.DateField(null = True, blank=True)
     age = models.IntegerField(null = True,blank=True)
     gender = models.CharField(max_length= 255,null=True, blank = True)
-
+    is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     date_joined = models.DateTimeField(default=timezone.now)
@@ -31,3 +31,8 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return str(self.phone)
+    def has_perm(self, perm, obj=None):
+        return True
+    def has_module_perms(self, app_label):
+     return True
+
