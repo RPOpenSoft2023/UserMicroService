@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Installed Apps
-    'rest_framework'
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -104,6 +104,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
 AUTH_USER_MODEL = 'UserAPI.User'
 
 # Internationalization

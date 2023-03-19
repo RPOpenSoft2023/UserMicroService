@@ -2,11 +2,8 @@ from django.db import models
 from django.contrib.auth.models import (PermissionsMixin,BaseUserManager, AbstractBaseUser )
 from django.utils import timezone
 from .managers import UserManager
-from .import constants as user_constants
-from django.core.validators import RegexValidator
 
 # Create your models here.
-
 class User(AbstractBaseUser, PermissionsMixin):
 
     first_name = models.CharField(max_length = 255)
@@ -34,3 +31,4 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return str(self.phone)
+
