@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # Installed Apps
-    'rest_framework'
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -105,6 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTH_USER_MODEL = 'UserAPI.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
@@ -128,9 +129,10 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+JWT_SECRET = "RPShiftBank"
 
-JWT_SECRET = "RPSHiftBank"
-
-JWT_ALGORITHM = "HS256"
+JWT_ALGORITHM= 'HS256'
 
 JWT_EXPIRY_TIME = 300
+SECURE_SSL_REDIRECT = False
+IFSC_API_KEY = '4G3S72r21LnuEFimrM1IAvPJ1'
