@@ -1,9 +1,8 @@
-from django.contrib import admin
-from django.urls import path,include
+from django.urls import path
 from .views import *
-from rest_framework import routers
 
 urlpatterns = [
+    path('send_otp/', send_otp , name="send_otp"),
     path('login/',Login,name='login'),
     path('register/',create_account,name='register'),
 ]
