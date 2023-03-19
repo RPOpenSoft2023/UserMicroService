@@ -9,4 +9,5 @@ router.register(r'users', UsersViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('login/',Login,name='login'),
+    path('register/',create_account,name='register'),
 ]

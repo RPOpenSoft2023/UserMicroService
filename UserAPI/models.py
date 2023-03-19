@@ -26,7 +26,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     REQUIRED_FIELDS = ['aadhar_no','email']
     USERNAME_FIELD = 'phone'
-
     objects = UserManager()
 
     def __str__(self):

@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import viewsets
-
+from rest_framework import status
 from . import models, serializers
 
 # create a viewset
@@ -29,3 +29,21 @@ def Login(request):
         return Response({'jwt_token': jwt_token, 'message': 'Logged In Successfully'}, status=200)
     except Exception as e:
         return Response({'error': str(e)}, status=401)
+@api_view(['POST'])
+# generate otp function here
+
+#verify otp function here
+
+def create_account(request):
+    
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return Response({'message': 'Authorization header is missing'}, status=status.HTTP_401_UNAUTHORIZED)
+        _, token = auth_header.split()
+        decoded_token = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
+        user_exists = models.User.objects.get(decoded_token.get('phone'))
+        if(user_exists is not None) :
+            return Response({'message':'an account with that phone number already exists'},status=400)
+    except Exception as e:
+        return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
