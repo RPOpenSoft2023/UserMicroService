@@ -8,11 +8,6 @@ from rest_framework import viewsets
 from rest_framework import status
 from . import models, serializers
 
-# create a viewset
-class UsersViewSet(viewsets.ModelViewSet):
-    queryset = models.User.objects.all()
-    serializer_class = serializers.UserSerializer
-
 @api_view(['POST'])
 def Login(request):
     try:
@@ -45,5 +40,8 @@ def create_account(request):
         user_exists = models.User.objects.get(decoded_token.get('phone'))
         if(user_exists is not None) :
             return Response({'message':'an account with that phone number already exists'},status=400)
+        new_user = serializers.UserSerializer(request)
+        new_user.save()
+        return Response({'message':'account created successfully'})
     except Exception as e:
         return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
