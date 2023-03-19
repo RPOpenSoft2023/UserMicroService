@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     # Our Apps
-    'UserAPI',    
+    'UserAPI',
 
     'django.contrib.admin',
     'django.contrib.auth',
