@@ -1,10 +1,11 @@
 from django.urls import path
-from .views import *
+from . import views
 
 urlpatterns = [
-    path('send_otp/', send_otp , name="send_otp"),
-    path('login/',Login,name='login'),
-    path('register/',create_account,name='register'),
-    path('verify_otp/', verify_otp),
-    path('forget_password/', forget_password)
+    path('generate_otp/', views.send_otp, name='send_otp'),
+    path('verify_otp/', views.verify_otp, name='verify_otp'),
+    path('register/', views.register, name='register'),
+    path('login/', views.login, name='login'),
+    path('forgot_password/', views.forget_password, name='forgot_password'),
+    path('verify_token/', views.verify_token, name='verify_token')
 ]
