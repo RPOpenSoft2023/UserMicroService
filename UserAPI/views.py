@@ -20,7 +20,7 @@ def login(request):
         password = request.data["password"]
         user = authenticate(phone=ph_No, password=password)
         if (user is None):
-            return Response({'message': 'credentials invalid'}, status=401)
+            return Response({'error': 'credentials invalid'}, status=401)
         jwt_token = jwt.encode(
             {
                 'phone':
@@ -46,7 +46,7 @@ def login(request):
 def send_otp(request):
     try:
         data = request.data
-        ph = data.get('phone_number')
+        ph = data.get('phone')
         print(ph)
         account_sid = settings.ACCOUNTS_SID
         # auth_token = os.environ["TWILIO_AUTH_TOKEN"]
@@ -60,7 +60,7 @@ def send_otp(request):
         print(message.sid)
         new_token = jwt.encode(
             {
-                'phone_number':
+                'phone':
                 ph,
                 'otp':
                 otp,
@@ -85,7 +85,7 @@ def verify_otp(request):
     try:
         auth_header = request.headers.get('Authorization')
         if not auth_header:
-            return Response({'message': 'Authorization header is missing'},
+            return Response({'error': 'Authorization header is missing'},
                             status=status.HTTP_401_UNAUTHORIZED)
         _, token = auth_header.split()
         # print("token: ",token)
@@ -93,21 +93,21 @@ def verify_otp(request):
                                    settings.JWT_SECRET,
                                    algorithms=[settings.JWT_ALGORITHM])
         actual_otp = decoded_token.get('otp')
-        phone_number = decoded_token.get('phone_number')
+        phone_number = decoded_token.get('phone')
         # print(actual_otp, phone_number)
 
         user_otp = request.data.get('otp')
         if not user_otp:
-            return Response({'message': 'User OTP is missing'},
+            return Response({'error': 'User OTP is missing'},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if user_otp != actual_otp:
-            return Response({'message': 'Invalid OTP'},
+            return Response({'error': 'Invalid OTP'},
                             status=status.HTTP_401_UNAUTHORIZED)
 
         new_token = jwt.encode(
             {
-                'phone_number':
+                'phone':
                 phone_number,
                 'exp':
                 datetime.datetime.now() +
@@ -118,7 +118,7 @@ def verify_otp(request):
 
         return Response({'token': new_token}, status=status.HTTP_200_OK)
     except Exception as e:
-        return Response({'message': str(e)},
+        return Response({'error': str(e)},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -127,7 +127,7 @@ def register(request):
     try:
         auth_header = request.headers.get('Authorization')
         if not auth_header:
-            return Response({'message': 'Authorization header is missing'},
+            return Response({'error': 'Authorization header is missing'},
                             status=status.HTTP_401_UNAUTHORIZED)
         _, token = auth_header.split()
         decoded_token = jwt.decode(token,
@@ -155,23 +155,23 @@ def forget_password(request):
     try:
         auth_header = request.headers.get('Authorization')
         if not auth_header:
-            return Response({'message': 'Authorization header is missing'},
+            return Response({'error': 'Authorization header is missing'},
                             status=status.HTTP_401_UNAUTHORIZED)
         _, token = auth_header.split()
         decoded_token = jwt.decode(token,
                                    settings.JWT_SECRET,
                                    algorithms=settings.JWT_ALGORITHM)
         actual_otp = decoded_token.get('otp')
-        phone_number = decoded_token.get('phone_number')
+        phone_number = decoded_token.get('phone')
         user_otp = request.data.get('otp')
         new_password = request.data.get('new_password')
 
         if not user_otp or not new_password:
-            return Response({'message': 'User OTP or new password is missing'},
+            return Response({'error': 'User OTP or new password is missing'},
                             status=status.HTTP_400_BAD_REQUEST)
 
         if user_otp != actual_otp:
-            return Response({'message': 'Invalid OTP'},
+            return Response({'error': 'Invalid OTP'},
                             status=status.HTTP_401_UNAUTHORIZED)
 
         User = get_user_model()
@@ -180,12 +180,12 @@ def forget_password(request):
             user.set_password(new_password)
             user.save()
         except User.DoesNotExist:
-            return Response({'message': 'User not found'},
+            return Response({'error': 'User not found'},
                             status=status.HTTP_404_NOT_FOUND)
 
         new_token = jwt.encode(
             {
-                'phone_number':
+                'phone':
                 phone_number,
                 'exp':
                 datetime.datetime.now() +
@@ -205,16 +205,16 @@ def verify_token(request):
     try:
         auth_header = request.headers.get('Authorization')
         if not auth_header:
-            return Response({'message': 'Authorization header is missing'},
+            return Response({'error': 'Authorization header is missing'},
                             status=status.HTTP_401_UNAUTHORIZED)
         _, token = auth_header.split()
         decoded_token = jwt.decode(token,
                                    settings.JWT_SECRET,
                                    algorithms=settings.JWT_ALGORITHM)
-        phone_number = decoded_token.get('phone_number')
+        phone_number = decoded_token.get('phone')
         user = serializers.UserSerializer(
             models.User.objects.get(pk=phone_number))
         return Response(user.data, status=status.HTTP_200_OK)
     except Exception as e:
-        return Response({'message': str(e)},
+        return Response({'error': str(e)},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
