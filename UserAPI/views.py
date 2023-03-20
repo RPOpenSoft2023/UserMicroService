@@ -183,18 +183,7 @@ def forget_password(request):
             return Response({'error': 'User not found'},
                             status=status.HTTP_404_NOT_FOUND)
 
-        new_token = jwt.encode(
-            {
-                'phone':
-                phone_number,
-                'exp':
-                datetime.datetime.now() +
-                datetime.timedelta(settings.JWT_EXPIRY_TIME)
-            },
-            settings.JWT_SECRET,
-            algorithm=settings.JWT_ALGORITHM)
-
-        return Response({'token': new_token}, status=status.HTTP_200_OK)
+         return Response({'message': "Password changed successfully"}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'message': str(e)},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
