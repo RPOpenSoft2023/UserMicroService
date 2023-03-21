@@ -15,12 +15,13 @@ from django.contrib.auth import get_user_model
 @api_view(['POST'])
 def login(request):
     try:
-        print(request.data)
-        ph_No = request.data["phone"]
+        ph_No = request.data["phone_number"]
         password = request.data["password"]
-        user = authenticate(phone=ph_No, password=password)
+        
+        user = authenticate(phone=int(ph_No), password=password)
+        
         if (user is None):
-            return Response({'error': 'credentials invalid'}, status=401)
+            return Response({'error': 'Credentials invalid'}, status=401)
         jwt_token = jwt.encode(
             {
                 'phone':
@@ -45,19 +46,17 @@ def login(request):
 @api_view(['POST'])
 def send_otp(request):
     try:
-        data = request.data
-        ph = data.get('phone')
-        print(ph)
+        ph = request.data['phone_number']
+
         account_sid = settings.ACCOUNTS_SID
-        # auth_token = os.environ["TWILIO_AUTH_TOKEN"]
         auth_token = settings.AUTH_TOKEN
         client = Client(account_sid, auth_token)
         otp = random.randint(100000, 999999)
-        message = client.messages.create(body="Hello from Harsh, OTP is " +
+        message = client.messages.create(body="Hello from ShiftBank, Your OTP is " +
                                          str(otp),
                                          from_=settings.PHONE,
                                          to='+91' + ph)
-        print(message.sid)
+        
         new_token = jwt.encode(
             {
                 'phone':
@@ -88,13 +87,11 @@ def verify_otp(request):
             return Response({'error': 'Authorization header is missing'},
                             status=status.HTTP_401_UNAUTHORIZED)
         _, token = auth_header.split()
-        # print("token: ",token)
         decoded_token = jwt.decode(token,
                                    settings.JWT_SECRET,
                                    algorithms=[settings.JWT_ALGORITHM])
         actual_otp = decoded_token.get('otp')
         phone_number = decoded_token.get('phone')
-        # print(actual_otp, phone_number)
 
         user_otp = request.data.get('otp')
         if not user_otp:
@@ -183,7 +180,7 @@ def forget_password(request):
             return Response({'error': 'User not found'},
                             status=status.HTTP_404_NOT_FOUND)
 
-         return Response({'message': "Password changed successfully"}, status=status.HTTP_200_OK)
+        return Response({'message': "Password changed successfully"}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'message': str(e)},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
