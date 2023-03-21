@@ -1,10 +1,19 @@
 from rest_framework import serializers
-from UserAPI.models import UserAPI
+from . import models
 
-class UserapiSerializer(serializers.ModelSerializer):
+
+class UserSerializer(serializers.ModelSerializer):
+
     class Meta:
-        model=UserAPI
-        fields="__all__"
+        model = models.User
+        exclude = [
+            'password',
+        ]
+        read_only_fields = [
+            'created_at',
+            'is_staff',
+            'is_superuser',
+        ]
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -14,12 +23,12 @@ class UserapiSerializer(serializers.ModelSerializer):
         return user
 
     def save(self, **kwargs):
-        phone = self.validated_data.get('phone')
-        if (len(str(phone))<10):
+        validated_data = {**self.validated_data, **kwargs}
+        phone = validated_data.get('phone')
+        aadhar_no = validated_data.get('aadhar_no')
+        if (len(str(phone)) < 10):
             raise serializers.ValidationError("Invalid phone no.")
-        aadhar_no = self.validated_data.get('aadhar_no')
-        if (len(str(aadhar_no))<12):
+        if (len(str(aadhar_no)) != 12):
             raise serializers.ValidationError("Invalid aadhar no.")
-        return super().save(**kwargs)
-        
-        
+        self.validated_data = validated_data
+        return super().save()

@@ -40,11 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
-    
 
     # Installed Apps
-    
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -106,7 +104,8 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-AUTH_USER_MODEL = 'UserAPI.UserAPI'
+
+AUTH_USER_MODEL = 'UserAPI.User'
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
@@ -130,4 +129,21 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+#### GLOBALS ####
+# Twilio Configs
+ACCOUNTS_SID = 'AC031bd3d4e1958d1a580cbf9ddce40b90'
 
+AUTH_TOKEN = '8766fe4f0d4cd538a329e60ed2c1a8fe'
+
+PHONE = '+15074316351'
+
+# JWT Configs
+JWT_SECRET = "POfst2k7RBQ40lTd0CLwccMl0QyZ0utCHz4kDiRuhtSt"
+
+JWT_ALGORITHM= 'HS256'
+
+JWT_EXPIRY_TIME = 300
+
+SECURE_SSL_REDIRECT = False
+
+IFSC_API_KEY = '4G3S72r21LnuEFimrM1IAvPJ1'

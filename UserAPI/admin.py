@@ -1,8 +1,7 @@
 from django.contrib import admin
+from . import models
 
-
-from .models import *
-class Useradmin(admin.ModelAdmin):
+class UserAdmin(admin.ModelAdmin):
     list_display=('first_name','email')
-# Register your models here.
-admin.site.register(UserAPI,Useradmin)
+
+admin.site.register(models.User, UserAdmin)
