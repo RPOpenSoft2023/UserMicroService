@@ -9,7 +9,7 @@ from django.contrib.auth import authenticate
 from rest_framework import status
 from . import models, serializers
 from django.contrib.auth import get_user_model
-
+from .utils import decode_token
 
 # Create your views here.
 @api_view(['POST'])
@@ -24,11 +24,8 @@ def login(request):
             return Response({'error': 'Credentials invalid'}, status=401)
         jwt_token = jwt.encode(
             {
-                'phone':
-                ph_No,
-                'exp':
-                datetime.datetime.now() +
-                datetime.timedelta(settings.JWT_EXPIRY_TIME)
+                'phone': ph_No,
+                'exp': datetime.datetime.now() + datetime.timedelta(settings.JWT_EXPIRY_TIME)
             },
             settings.JWT_SECRET,
             algorithm=settings.JWT_ALGORITHM)
@@ -56,16 +53,11 @@ def send_otp(request):
                                          str(otp),
                                          from_=settings.PHONE,
                                          to='+91' + ph)
-        
         new_token = jwt.encode(
             {
-                'phone':
-                ph,
-                'otp':
-                otp,
-                'exp':
-                datetime.datetime.now() +
-                datetime.timedelta(settings.JWT_EXPIRY_TIME)
+                'phone':ph,
+                'otp':otp,
+                'exp':datetime.datetime.now() + datetime.timedelta(settings.JWT_EXPIRY_TIME)
             },
             settings.JWT_SECRET,
             algorithm=settings.JWT_ALGORITHM)
@@ -82,14 +74,8 @@ def send_otp(request):
 @api_view(['POST'])
 def verify_otp(request):
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return Response({'error': 'Authorization header is missing'},
-                            status=status.HTTP_401_UNAUTHORIZED)
-        _, token = auth_header.split()
-        decoded_token = jwt.decode(token,
-                                   settings.JWT_SECRET,
-                                   algorithms=[settings.JWT_ALGORITHM])
+        decoded_token = decode_token(request)
+
         actual_otp = decoded_token.get('otp')
         phone_number = decoded_token.get('phone')
 
@@ -104,11 +90,8 @@ def verify_otp(request):
 
         new_token = jwt.encode(
             {
-                'phone':
-                phone_number,
-                'exp':
-                datetime.datetime.now() +
-                datetime.timedelta(settings.JWT_EXPIRY_TIME)
+                'phone': phone_number,
+                'exp':datetime.datetime.now() + datetime.timedelta(settings.JWT_EXPIRY_TIME)
             },
             settings.JWT_SECRET,
             algorithm=settings.JWT_ALGORITHM)
@@ -122,14 +105,9 @@ def verify_otp(request):
 @api_view(['POST'])
 def register(request):
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return Response({'error': 'Authorization header is missing'},
-                            status=status.HTTP_401_UNAUTHORIZED)
-        _, token = auth_header.split()
-        decoded_token = jwt.decode(token,
-                                   settings.JWT_SECRET,
-                                   algorithms=[settings.JWT_ALGORITHM])
+
+        decoded_token = decode_token(request)
+
         user = models.User.objects.get(decoded_token.get('phone'))
         if (user is not None):
             return Response(
@@ -150,14 +128,9 @@ def register(request):
 @api_view(['PUT'])
 def forget_password(request):
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return Response({'error': 'Authorization header is missing'},
-                            status=status.HTTP_401_UNAUTHORIZED)
-        _, token = auth_header.split()
-        decoded_token = jwt.decode(token,
-                                   settings.JWT_SECRET,
-                                   algorithms=settings.JWT_ALGORITHM)
+
+        decoded_token = decode_token(request)
+
         actual_otp = decoded_token.get('otp')
         phone_number = decoded_token.get('phone')
         user_otp = request.data.get('otp')
@@ -189,14 +162,9 @@ def forget_password(request):
 @api_view(['GET'])
 def verify_token(request):
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return Response({'error': 'Authorization header is missing'},
-                            status=status.HTTP_401_UNAUTHORIZED)
-        _, token = auth_header.split()
-        decoded_token = jwt.decode(token,
-                                   settings.JWT_SECRET,
-                                   algorithms=settings.JWT_ALGORITHM)
+
+        decoded_token = decode_token(request)
+
         phone_number = decoded_token.get('phone')
         user = serializers.UserSerializer(
             models.User.objects.get(pk=phone_number))
@@ -204,3 +172,19 @@ def verify_token(request):
     except Exception as e:
         return Response({'error': str(e)},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['GET'])
+def get_user(request, pk):
+    try:
+
+        decoded_token = decode_token(request)
+
+        phone_number = decoded_token.get('phone')
+        user = models.User.objects.get(pk=phone_number)
+        if not user.is_staff:
+            return Response({'error': 'You are not a staff member'}, status=status.HTTP_401_UNAUTHORIZED)
+        serializer = serializers.UserSerializer(models.User.objects.get(pk=pk))
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)},status=500)
+
