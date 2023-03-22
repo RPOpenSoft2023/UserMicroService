@@ -7,7 +7,8 @@ import jwt
 import datetime
 from django.contrib.auth import authenticate
 from rest_framework import status
-from . import models, serializers
+from .models import *
+from .serializers import *
 from django.contrib.auth import get_user_model
 
 
@@ -15,38 +16,34 @@ from django.contrib.auth import get_user_model
 @api_view(['POST'])
 def login(request):
     try:
-        ph_No = request.data["phone_number"]
+        phone_number = request.data["phone_number"]
         password = request.data["password"]
         
-        user = authenticate(phone=int(ph_No), password=password)
+        user = authenticate(phone_number=str(phone_number), password=password)
         
         if (user is None):
             return Response({'error': 'Credentials invalid'}, status=401)
         jwt_token = jwt.encode(
             {
-                'phone':
-                ph_No,
-                'exp':
-                datetime.datetime.now() +
-                datetime.timedelta(settings.JWT_EXPIRY_TIME)
+                'phone_number':phone_number,
+                'exp': timezone.now() + datetime.timedelta(settings.JWT_EXPIRY_TIME),
+                'iat': timezone.now()
             },
             settings.JWT_SECRET,
             algorithm=settings.JWT_ALGORITHM)
-        return Response(
-            {
-                'jwt_token': jwt_token,
-                'message': 'Logged In Successfully'
-            },
-            status=200)
+        return Response({
+            'message': 'Logged In Successfully',
+            'login_token': jwt_token
+            }, status=200)
     except Exception as e:
         return Response({'error': str(e)}, status=401)
 
 
 # generate otp function here
 @api_view(['POST'])
-def send_otp(request):
+def send_otp(request, purpose):
     try:
-        ph = request.data['phone_number']
+        phone_number = request.data['phone_number']
 
         account_sid = settings.ACCOUNTS_SID
         auth_token = settings.AUTH_TOKEN
@@ -55,25 +52,15 @@ def send_otp(request):
         message = client.messages.create(body="Hello from ShiftBank, Your OTP is " +
                                          str(otp),
                                          from_=settings.PHONE,
-                                         to='+91' + ph)
-        
-        new_token = jwt.encode(
-            {
-                'phone':
-                ph,
-                'otp':
-                otp,
-                'exp':
-                datetime.datetime.now() +
-                datetime.timedelta(settings.JWT_EXPIRY_TIME)
-            },
-            settings.JWT_SECRET,
-            algorithm=settings.JWT_ALGORITHM)
-        return Response({
-            'message': 'OTP sent',
-            'jwt_token': new_token
-        },
-                        status=200)
+                                         to='+91' + phone_number)
+        otp_obj = OTPModel.objects.filter(phone_number=phone_number).filter(purpose=purpose).first()
+        if otp_obj is not None:
+            otp_obj.delete()
+        else:
+            otp_obj = OTPModel.objects.create(otp=otp, phone_number=phone_number, purpose=purpose)
+        otp_obj.save()
+
+        return Response({'message': 'OTP sent'}, status=200)
     except Exception as e:
         return Response({"error": str(e)}, status=401)
 
@@ -82,38 +69,36 @@ def send_otp(request):
 @api_view(['POST'])
 def verify_otp(request):
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return Response({'error': 'Authorization header is missing'},
-                            status=status.HTTP_401_UNAUTHORIZED)
-        _, token = auth_header.split()
-        decoded_token = jwt.decode(token,
-                                   settings.JWT_SECRET,
-                                   algorithms=[settings.JWT_ALGORITHM])
-        actual_otp = decoded_token.get('otp')
-        phone_number = decoded_token.get('phone')
 
+        phone_number = request.data["phone_number"]
         user_otp = request.data.get('otp')
-        if not user_otp:
-            return Response({'error': 'User OTP is missing'},
-                            status=status.HTTP_400_BAD_REQUEST)
 
-        if user_otp != actual_otp:
+        otp_obj = OTPModel.objects.filter(phone_number=phone_number).first()
+        
+        if otp_obj is None:
+            return Response({"error":"No OTP is sent on this phone number"}, status=400)
+
+        if not user_otp:
+            return Response({'error': 'User OTP is missing'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if str(user_otp) != str(otp_obj.otp):
             return Response({'error': 'Invalid OTP'},
                             status=status.HTTP_401_UNAUTHORIZED)
+        
+        if otp_obj.valid_until < timezone.now():
+            return Response({'error': 'OTP has expired'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        otp_obj.delete()
 
-        new_token = jwt.encode(
-            {
-                'phone':
-                phone_number,
-                'exp':
-                datetime.datetime.now() +
-                datetime.timedelta(settings.JWT_EXPIRY_TIME)
+        new_token = jwt.encode({
+            'phone_number': phone_number,
+            'exp': timezone.now() + datetime.timedelta(settings.JWT_EXPIRY_TIME),
+            'iat': timezone.now()
             },
             settings.JWT_SECRET,
             algorithm=settings.JWT_ALGORITHM)
 
-        return Response({'token': new_token}, status=status.HTTP_200_OK)
+        return Response({'register_token': new_token}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -127,21 +112,47 @@ def register(request):
             return Response({'error': 'Authorization header is missing'},
                             status=status.HTTP_401_UNAUTHORIZED)
         _, token = auth_header.split()
+
         decoded_token = jwt.decode(token,
                                    settings.JWT_SECRET,
                                    algorithms=[settings.JWT_ALGORITHM])
-        user = models.User.objects.get(decoded_token.get('phone'))
-        if (user is not None):
-            return Response(
-                {
-                    'message':
-                    'an account with that phone number already exists'
-                },
-                status=400)
-        user = serializers.UserSerializer(data=request.data)
-        user.is_valid(raise_exception=True)
-        user.save()
-        return Response({'message': 'account created successfully'})
+        
+        phone_number = decoded_token.get('phone_number')
+
+        user = User.objects.filter(phone_number=phone_number).first()
+        
+        if user is not None:
+            return Response({'error':'An account with this phone number already exists'}, status=400)
+        
+        if "password" not in request.data:
+            return Response({"error":"Password not present"}, status=400)
+        
+        if request.data["password"] == "":
+            return Response({"error":"Don't send password as empty"}, status=400)
+        
+        if "aadhar_no" not in request.data:
+            return Response({"error":"Aadhar number not present"}, status=400)
+        
+        aadhar_no = request.data['aadhar_no']
+        if len(str(aadhar_no)) != 12:
+            return Response({'error':'Invalid Aadhar number'}, status=400)
+        
+        data = {}
+
+        for key in request.data:
+            print(key)
+            if "phone_number" == key or "password" == key: continue
+            data[key] = request.data[key]
+
+        data["phone_number"] = phone_number
+
+        try:
+            user = User(**data)
+            user.set_password(request.data["password"])
+            user.save()
+        except Exception as e:
+            return Response({"error":str(e)}, status=400)
+        return Response({'message': 'Account created successfully'})
     except Exception as e:
         return Response({'error': str(e)},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -150,40 +161,38 @@ def register(request):
 @api_view(['PUT'])
 def forget_password(request):
     try:
-        auth_header = request.headers.get('Authorization')
-        if not auth_header:
-            return Response({'error': 'Authorization header is missing'},
-                            status=status.HTTP_401_UNAUTHORIZED)
-        _, token = auth_header.split()
-        decoded_token = jwt.decode(token,
-                                   settings.JWT_SECRET,
-                                   algorithms=settings.JWT_ALGORITHM)
-        actual_otp = decoded_token.get('otp')
-        phone_number = decoded_token.get('phone')
+        phone_number = request.data.get('phone_number')
         user_otp = request.data.get('otp')
         new_password = request.data.get('new_password')
 
-        if not user_otp or not new_password:
-            return Response({'error': 'User OTP or new password is missing'},
+        otp_obj = OTPModel.objects.filter(phone_number=phone_number).first()
+        
+        if otp_obj is None:
+            return Response({"error":"No OTP is sent on this phone number"}, status=400)
+
+        if not user_otp:
+            return Response({'error': 'User OTP is missing'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if str(user_otp) != str(otp_obj.otp):
+            return Response({'error': 'Invalid OTP'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        if otp_obj.valid_until < timezone.now():
+            return Response({'error': 'OTP has expired'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if new_password is None:
+            return Response({'error': 'New password is missing'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        if user_otp != actual_otp:
-            return Response({'error': 'Invalid OTP'},
-                            status=status.HTTP_401_UNAUTHORIZED)
-
-        User = get_user_model()
         try:
             user = User.objects.get(phone_number=phone_number)
             user.set_password(new_password)
             user.save()
         except User.DoesNotExist:
-            return Response({'error': 'User not found'},
-                            status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
         return Response({'message': "Password changed successfully"}, status=status.HTTP_200_OK)
     except Exception as e:
-        return Response({'message': str(e)},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -197,10 +206,12 @@ def verify_token(request):
         decoded_token = jwt.decode(token,
                                    settings.JWT_SECRET,
                                    algorithms=settings.JWT_ALGORITHM)
-        phone_number = decoded_token.get('phone')
-        user = serializers.UserSerializer(
-            models.User.objects.get(pk=phone_number))
-        return Response(user.data, status=status.HTTP_200_OK)
+        phone_number = decoded_token.get('phone_number')
+        user = User.objects.filter(phone_number=phone_number).first()
+        if user is None:
+            return Response({"error":"No user exists with this phone number"}, status=400)
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,7 +1,8 @@
 from django.contrib import admin
-from . import models
+from .models import *
 
 class UserAdmin(admin.ModelAdmin):
-    list_display=('first_name','email')
+    list_display=('phone_number','email')
 
-admin.site.register(models.User, UserAdmin)
+admin.site.register(User, UserAdmin)
+admin.site.register(OTPModel)
