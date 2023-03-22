@@ -25,7 +25,8 @@ def login(request):
         jwt_token = jwt.encode(
             {
                 'phone': ph_No,
-                'exp': datetime.datetime.now() + datetime.timedelta(settings.JWT_EXPIRY_TIME)
+                'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=settings.JWT_LOGIN_EXPIRY_TIME),
+                'iat': datetime.datetime.now(tz=datetime.timezone.utc)
             },
             settings.JWT_SECRET,
             algorithm=settings.JWT_ALGORITHM)
@@ -57,7 +58,8 @@ def send_otp(request):
             {
                 'phone':ph,
                 'otp':otp,
-                'exp':datetime.datetime.now() + datetime.timedelta(settings.JWT_EXPIRY_TIME)
+                'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=settings.JWT_OTP_EXPIRY_TIME),
+                'iat': datetime.datetime.now(tz=datetime.timezone.utc)
             },
             settings.JWT_SECRET,
             algorithm=settings.JWT_ALGORITHM)
@@ -84,14 +86,15 @@ def verify_otp(request):
             return Response({'error': 'User OTP is missing'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        if user_otp != actual_otp:
+        if int(user_otp) != int(actual_otp):
             return Response({'error': 'Invalid OTP'},
                             status=status.HTTP_401_UNAUTHORIZED)
 
         new_token = jwt.encode(
             {
                 'phone': phone_number,
-                'exp':datetime.datetime.now() + datetime.timedelta(settings.JWT_EXPIRY_TIME)
+                'exp': datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=settings.JWT_LOGIN_EXPIRY_TIME),
+                'iat': datetime.datetime.now(tz=datetime.timezone.utc)
             },
             settings.JWT_SECRET,
             algorithm=settings.JWT_ALGORITHM)

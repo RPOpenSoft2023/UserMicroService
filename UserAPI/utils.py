@@ -6,15 +6,14 @@ import requests
 import jwt
 from django.conf import settings
 from django.core import exceptions
-
-# Assign IFSC code
-ifsc = 'KKBK0005652'
+# # Assign IFSC code
+# ifsc = 'KKBK0005652'
   
-# Parse the ifsc code
-data = FetchData().getdata(ifsc)
+# # Parse the ifsc code
+# data = FetchData().getdata(ifsc)
   
-# Display details
-print(data)
+# # Display details
+# print(data)
 
 def bank_details(ifsc):
     try:
@@ -33,7 +32,7 @@ def decode_token(request):
         return decoded_token
     except jwt.InvalidSignatureError:    
         raise Exception('Token Invalid')
-    except jwt.ExpiredTokenError:
+    except jwt.ExpiredSignatureError:
         raise Exception('Token Expired')
     except IndexError:
         raise Exception('Token prefix missing')
