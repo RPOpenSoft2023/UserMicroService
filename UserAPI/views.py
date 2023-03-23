@@ -12,6 +12,8 @@ from .serializers import *
 from django.contrib.auth import get_user_model
 
 
+READ_ONLY_FIELDS = ["is_staff", "is_superuser", "is_active", "groups", "user_permissions", "created_at", "reports_count", "accounts_count"]
+
 # Create your views here.
 @api_view(['POST'])
 def login(request):
@@ -41,9 +43,18 @@ def login(request):
 
 # generate otp function here
 @api_view(['POST'])
-def send_otp(request, purpose):
+def send_otp(request):
     try:
+
+        if "phone_number" not in request.data:
+            return Response({'error':'Phone number missing'}, status=400)
+        
+        if "purpose" not in request.data:
+            return Response({'error':'Purpose missing'}, status=400)
+
         phone_number = request.data['phone_number']
+        purpose = request.data["purpose"]
+
 
         account_sid = settings.ACCOUNTS_SID
         auth_token = settings.AUTH_TOKEN
@@ -53,16 +64,16 @@ def send_otp(request, purpose):
                                          str(otp),
                                          from_=settings.PHONE,
                                          to='+91' + phone_number)
+        print("purpose")
         otp_obj = OTPModel.objects.filter(phone_number=phone_number).filter(purpose=purpose).first()
         if otp_obj is not None:
             otp_obj.delete()
-        print(purpose)
         otp_obj = OTPModel.objects.create(otp=otp, phone_number=phone_number, purpose=purpose,valid_until=timezone.now()+datetime.timedelta(seconds=settings.OTP_EXPIRY_TIME))
         otp_obj.save()
 
         return Response({'message': 'OTP sent'}, status=200)
     except Exception as e:
-        return Response({"error": str(e)}, status=401)
+        return Response({"error": str(e)}, status=400)
 
 
 #verify otp function here
@@ -70,11 +81,21 @@ def send_otp(request, purpose):
 def verify_otp(request):
     try:
 
-        phone_number = request.data["phone_number"]
-        user_otp = request.data.get('otp')
+        if "phone_number" not in request.data:
+            return Response({"error":"Phone number missing"}, status=400)
+        
+        if "otp" not in request.data:
+            return Response({"error":"OTP missing"}, status=400)
+        
+        if "purpose" not in request.data:
+            return Response({"error":"Purpose missing"}, status=400)
 
-        otp_obj = OTPModel.objects.filter(phone_number=phone_number).first()
-        print(otp_obj.otp)
+        phone_number = request.data["phone_number"]
+        user_otp = request.data['otp']
+        purpose = request.data['purpose']
+
+        otp_obj = OTPModel.objects.filter(phone_number=phone_number).filter(purpose=purpose).first()
+       
         if otp_obj is None:
             return Response({"error":"No OTP is sent on this phone number"}, status=400)
 
@@ -101,7 +122,7 @@ def verify_otp(request):
         return Response({'register_token': new_token}, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -123,6 +144,9 @@ def register(request):
         
         if user is not None:
             return Response({'error':'An account with this phone number already exists'}, status=400)
+        
+        if len([value for value in READ_ONLY_FIELDS if value in request.data]):
+            return Response({'error':'You are not authorized to add these details'}, status=401)
         
         if "password" not in request.data:
             return Response({"error":"Password not present"}, status=400)
@@ -155,7 +179,56 @@ def register(request):
         return Response({'message': 'Account created successfully'})
     except Exception as e:
         return Response({'error': str(e)},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+def update_user(request):
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header:
+            return Response({'error': 'Authorization header is missing'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        _, token = auth_header.split()
+
+        decoded_token = jwt.decode(token,
+                                   settings.JWT_SECRET,
+                                   algorithms=[settings.JWT_ALGORITHM])
+        
+        phone_number = decoded_token.get('phone_number')
+
+        user = User.objects.filter(phone_number=phone_number).first()
+
+        if user is None:
+            return Response({'error': 'No user with this phone number exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if len([value for value in READ_ONLY_FIELDS if value in request.data]):
+            return Response({'error':'You are not authorized to add details'}, status=401)
+
+        if "password" in request.data:
+            if request.data["password"] == "":
+                return Response({'error': 'Password can not be empty'}, status=400)
+            user.set_password(request.data["password"])
+            user.save()
+
+        if "phone_number" in request.data:
+            return Response({'error': 'You can\'t update phone number before verification'})
+        
+        if "aadhar_no" in request.data and len(str(request.data["aadhar_no"])) != 12:
+                return Response({'error':'Invalid Aadhar number'}, status=400)
+
+        for key in request.data:
+            if key in ["password", "phone_number", "password"]: continue
+            try:
+                setattr(user, key, request.data[key])
+            except Exception as e:
+                pass
+
+        user.save()
+        return Response({"message":"User data updated successfully"}, status=200)
+    
+    except Exception as e:
+        return Response({"error":str(e)}, status=401)
+
 
 
 @api_view(['PUT'])
@@ -192,7 +265,7 @@ def forget_password(request):
 
         return Response({'message': "Password changed successfully"}, status=status.HTTP_200_OK)
     except Exception as e:
-        return Response({'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -214,4 +287,4 @@ def verify_token(request):
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        status=status.HTTP_400_BAD_REQUEST)

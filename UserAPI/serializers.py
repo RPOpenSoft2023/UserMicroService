@@ -7,11 +7,5 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.User
         exclude = [
-            'password',
-        ]
-        read_only_fields = [
-            'created_at',
-            'is_staff',
-            'is_superuser',
-            'is_admin',
+            "password","is_staff","is_active","is_superuser", "groups","user_permissions",
         ]
