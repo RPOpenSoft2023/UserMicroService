@@ -12,7 +12,7 @@ from .serializers import *
 from django.contrib.auth import get_user_model
 
 
-READ_ONLY_FIELDS = ["is_staff", "is_superuser", "is_active", "groups", "user_permissions", "created_at", "reports_count", "accounts_count"]
+READ_ONLY_FIELDS = ["is_staff", "is_superuser", "is_active", "groups", "user_permissions", "created_at"]
 
 # Create your views here.
 @api_view(['POST'])
@@ -64,7 +64,6 @@ def send_otp(request):
                                          str(otp),
                                          from_=settings.PHONE,
                                          to='+91' + phone_number)
-        print("purpose")
         otp_obj = OTPModel.objects.filter(phone_number=phone_number).filter(purpose=purpose).first()
         if otp_obj is not None:
             otp_obj.delete()
@@ -97,7 +96,7 @@ def verify_otp(request):
         otp_obj = OTPModel.objects.filter(phone_number=phone_number).filter(purpose=purpose).first()
        
         if otp_obj is None:
-            return Response({"error":"No OTP is sent on this phone number"}, status=400)
+            return Response({"error":"No OTP is sent on this phone number with the specified purpose"}, status=400)
 
         if not user_otp:
             return Response({'error': 'User OTP is missing'}, status=status.HTTP_400_BAD_REQUEST)
@@ -258,6 +257,7 @@ def forget_password(request):
 
         try:
             user = User.objects.get(phone_number=phone_number)
+            otp_obj.delete()
             user.set_password(new_password)
             user.save()
         except User.DoesNotExist:
