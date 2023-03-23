@@ -68,8 +68,7 @@ def send_otp(request):
         otp_obj = OTPModel.objects.filter(phone_number=phone_number).filter(purpose=purpose).first()
         if otp_obj is not None:
             otp_obj.delete()
-        
-        otp_obj = OTPModel.objects.create(otp=otp, phone_number=phone_number, purpose=purpose)
+        otp_obj = OTPModel.objects.create(otp=otp, phone_number=phone_number, purpose=purpose,valid_until=timezone.now()+datetime.timedelta(seconds=settings.OTP_EXPIRY_TIME))
         otp_obj.save()
 
         return Response({'message': 'OTP sent'}, status=200)
@@ -96,7 +95,7 @@ def verify_otp(request):
         purpose = request.data['purpose']
 
         otp_obj = OTPModel.objects.filter(phone_number=phone_number).filter(purpose=purpose).first()
-        
+       
         if otp_obj is None:
             return Response({"error":"No OTP is sent on this phone number"}, status=400)
 

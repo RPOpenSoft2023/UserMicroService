@@ -41,7 +41,7 @@ class OTPModel(models.Model):
     )
     phone_number = models.CharField(max_length=10, null=True, blank=True)
     otp = models.CharField(max_length=6, null=True, blank=True)
-    valid_until = models.DateTimeField(default=timezone.now()+datetime.timedelta(seconds=settings.OTP_EXPIRY_TIME), help_text="The timestamp of the moment of expiry of the saved token.")
+    valid_until = models.DateTimeField(help_text="The timestamp of the moment of expiry of the saved token.")
     purpose = models.CharField(max_length=255, null=True, blank=True, choices=PURPOSE_CHOICES)
 
     def __str__(self):
