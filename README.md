@@ -1,6 +1,9 @@
 # UserMicroService
 
-## Installation using virtualenv package:
+## Required Packages:
+- View [requirement.txt](https://github.com/RPOpenSoft2023/UserMicroService/blob/main/requirements.txt)
+
+## Instructions to build & install the software:
 - Clone the repository
 
   ```
@@ -57,6 +60,8 @@
   ```
   python manage.py createsuperuser
   ```
+
+## Instructions to run the software:
 - Run the server
 
   ```
