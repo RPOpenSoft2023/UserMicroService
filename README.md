@@ -35,7 +35,7 @@
   ```
   source myenv/bin/activate
   ```
-- Change directory to the cloned folder i.e. ApnaInsti_deployed
+- Change directory to the cloned folder i.e. UserMicroService
 
   ```
   cd UserMicroService
