@@ -35,6 +35,21 @@
   ```
   source myenv/bin/activate
   ```
+  - Add environment variables for connecting to Postgres Database
+  Windows:
+  
+  ```
+  [System.Environment]::SetEnvironmentVariable('DATABASE_USER', 'postgres')
+  [System.Environment]::SetEnvironmentVariable('DATABASE_PASSWORD', 'demo')
+  [System.Environment]::SetEnvironmentVariable('DATABASE_NAME', 'users-db')
+  ```
+  Linux:
+  
+  ```
+  export DATABASE_USER='postgres'
+  export DATABASE_PASSWORD='demo'
+  export DATABASE_NAME='users-db'
+  ```
 - Change directory to the cloned folder i.e. UserMicroService
 
   ```
