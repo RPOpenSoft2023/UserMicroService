@@ -25,6 +25,7 @@
   python -m virtualenv myenv
   ```
 - Activate the virtual environment
+  
   Windows:
   
   ```
@@ -36,6 +37,7 @@
   source myenv/bin/activate
   ```
 - Add environment variables for connecting to Postgres Database
+  
   Windows:
   
   ```
