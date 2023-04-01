@@ -1,7 +1,7 @@
 # UserMicroService
 
 ## Required Packages:
-- View [requirement.txt](https://github.com/RPOpenSoft2023/UserMicroService/blob/main/requirements.txt)
+- View requirement.txt in the project directory.
 
 ## Instructions to build & install the software:
 - Clone the repository
