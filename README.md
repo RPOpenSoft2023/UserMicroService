@@ -35,7 +35,7 @@
   ```
   source myenv/bin/activate
   ```
-  - Add environment variables for connecting to Postgres Database
+- Add environment variables for connecting to Postgres Database
   Windows:
   
   ```
